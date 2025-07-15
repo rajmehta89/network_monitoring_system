@@ -513,7 +513,7 @@ public class Constants {
     /**
      * The constant ZMQ_HEALTH_CHECK_TIMEOUT.
      */
-    public static final int ZMQ_HEALTH_CHECK_TIMEOUT = 5000;
+    public static final int ZMQ_HEALTH_CHECK_TIMEOUT = 1500;
 
 
     /**
