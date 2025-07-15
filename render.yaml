@@ -1,7 +1,7 @@
 services:
   - type: web
     name: nms-java-server
-    runtime: java
+    env: java
     buildCommand: mvn clean package -DskipTests
     startCommand: java -jar target/my-vertx-project-1.0-SNAPSHOT.jar
  
