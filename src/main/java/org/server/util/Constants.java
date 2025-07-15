@@ -508,7 +508,7 @@ public class Constants {
     /**
      * The constant ZMQ_BIND_ADDRESS.
      */
-    public static final String ZMQ_BIND_ADDRESS = "tcp://*:5555";
+    public static final String ZMQ_BIND_ADDRESS = "tcp://127.0.0.1:5555";
 
     /**
      * The constant ZMQ_HEALTH_CHECK_TIMEOUT.
@@ -524,7 +524,7 @@ public class Constants {
     /**
      * The constant ZMQ_CONNECT_ADDRESS.
      */
-    public static final String ZMQ_CONNECT_ADDRESS="tcp://localhost:5556";
+    public static final String ZMQ_CONNECT_ADDRESS="tcp://127.0.0.1:5556";
 
     /**
      * The constant CREDENTIAL.
