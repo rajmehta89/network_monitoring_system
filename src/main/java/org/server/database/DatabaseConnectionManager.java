@@ -26,14 +26,14 @@ public class DatabaseConnectionManager {
      */
     public DatabaseConnectionManager(Vertx vertx) {
 
-        var connectOptions = new PgConnectOptions().setHost(DATABASEHOSTNAME).setPort(DATABASE_PORT).setDatabase(DATABASENAME).setUser(USERNAME).setPassword(DATABASEPASSWORD).setReconnectAttempts(RECONNECTATTEMPT).setReconnectInterval(RECONNECTINTERVALTIME);
+        var connectOptions = new PgConnectOptions().setHost(DATABASEHOSTNAME).setPort(DATABASE_PORT).setDatabase(DATABASENAME).setUser(DATABASEUSERNAME).setPassword(DATABASEPASSWORD).setReconnectAttempts(RECONNECTATTEMPT).setReconnectInterval(RECONNECTINTERVALTIME);
 
         var poolOptions = new PoolOptions().setMaxSize(POOL_SIZE).setMaxWaitQueueSize(MAX_WAIT_QUEUE_SIZE).setIdleTimeout(POOLED_IDLE_TIME);
 
         this.pool = Pool.pool(vertx, connectOptions, poolOptions);
 
         Logger.info("Database connected successfully and pool created successfully");
-
+                                    
         createTables();
 
     }

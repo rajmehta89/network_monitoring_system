@@ -450,7 +450,10 @@ public class Constants {
     /**
      * The constant DATABASEPASSWORD.
      */
-    public static final String DATABASEPASSWORD="secure_password";
+    public static final String DATABASEPASSWORD="oT4OG1FYfmEdPBIgmEsYCM1PSHJhzTrO";
+
+
+    public static final String DATABASEUSERNAME="network_monitoring_user";
 
     /**
      * The constant RECONNECTATTEMPT.
@@ -465,7 +468,7 @@ public class Constants {
     /**
      * The constant DATABASEHOSTNAME.
      */
-    public static final String DATABASEHOSTNAME="localhost";
+    public static final String DATABASEHOSTNAME="dpg-d1r2ilur433s739pj9fg-a.oregon-postgres.render.com";
 
     /**
      * The constant EVENT_BUS_SEND_TIMEOUT.
