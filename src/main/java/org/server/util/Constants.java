@@ -519,7 +519,7 @@ public class Constants {
     /**
      * The constant SET_SEND_FIRST_MESSAGE_TIMEOUT.
      */
-    public static final int SET_SEND_FIRST_MESSAGE_TIMEOUT = 500;
+    public static final int SET_SEND_FIRST_MESSAGE_TIMEOUT = 5000;
 
     /**
      * The constant ZMQ_CONNECT_ADDRESS.
