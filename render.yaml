@@ -1,9 +1,10 @@
 services:
   - type: web
     name: nms-java-server
-    runtime: docker
+    env: docker
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeploy: true
-
+    region: oregon
+    healthCheckPath: /
