@@ -1,13 +1,23 @@
-# Use official Maven image to build
+# ===== Stage 1: Build =====
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
-COPY . .
+
+# Copy Maven project files first (for better caching)
+COPY pom.xml .
+COPY src ./src
+
+# Build JAR (skip tests for faster build)
 RUN mvn clean package -DskipTests
 
-# Use JRE-only image for runtime
+# ===== Stage 2: Runtime =====
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/target/my-vertx-project-1.0-SNAPSHOT.jar app.jar
 
+# Copy built JAR from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose application port
 EXPOSE 8080
-CMD ["java", "-jar", "app.jar"]
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
