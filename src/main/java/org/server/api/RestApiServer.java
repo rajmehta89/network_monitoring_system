@@ -16,20 +16,21 @@ import java.util.Set;
 import static org.server.util.Constants.*;
 
 /**
- * The type Rest api server.
+ * The type Rest API server.
  */
 public class RestApiServer extends AbstractVerticle {
 
     private final Logger LOGGER = LoggerFactory.getLogger(RestApiServer.class);
 
-    private final int DEFAULT_PORT = 8000;
+    private final int DEFAULT_PORT = 8000; // Fallback for local dev
 
     /**
-     * Main Vert.x service class responsible for setting up the HTTP server,
-     * configuring routes, and handling API requests.
+     * Vert.x service entry point — sets up HTTP routing and starts the server.
      */
     @Override
     public void start(Promise<Void> startPromise) {
+
+        LOGGER.info("[RestApiServer] Initializing...");
 
         var router = createRouter();
 
@@ -38,24 +39,15 @@ public class RestApiServer extends AbstractVerticle {
         registerAllRoutes(router, apiHandler);
 
         startServer(router).onSuccess(httpRes -> {
-
             startPromise.complete();
-
         }).onFailure(err -> {
-
             LOGGER.error("RestApiServer failed to start", err);
-
             startPromise.fail(err.getMessage());
-
         });
-
     }
 
-
     /**
-     * Creates a new router and adds a body handler to handle incoming requests.
-     *
-     * @return a configured Router instance
+     * Creates a router and adds global handlers (CORS, body parsing).
      */
     private Router createRouter() {
 
@@ -66,9 +58,11 @@ public class RestApiServer extends AbstractVerticle {
                 .handler(BodyHandler.create());
 
         return router;
-
     }
 
+    /**
+     * Sets up a permissive CORS handler for all HTTP methods.
+     */
     private CorsHandler createCorsHandler() {
 
         return CorsHandler.create()
@@ -87,15 +81,10 @@ public class RestApiServer extends AbstractVerticle {
                         "Access-Control-Allow-Headers",
                         "Content-Type"
                 ));
-
     }
 
-
     /**
-     * Registers all API routes with the given router.
-     *
-     * @param router     the router to register routes on
-     * @param apiHandler the API request handler
+     * Registers all API route groups.
      */
     private void registerAllRoutes(Router router, ApiRequestHandler apiHandler) {
 
@@ -106,106 +95,121 @@ public class RestApiServer extends AbstractVerticle {
         registerProvisioningRoutes(router, apiHandler);
 
         registerSystemMonitorRoutes(router, apiHandler);
-
     }
 
-
     /**
-     * Registers routes for credential profile operations.
+     * Credential profile routes.
      */
     private void registerCredentialProfileRoutes(Router router, ApiRequestHandler apiHandler) {
 
-        router.get(API_GET_CREDENTIAL_PROFILE).handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_GET_CREDENTIAL_PROFILE));
+        router.get(API_GET_CREDENTIAL_PROFILE)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_GET_CREDENTIAL_PROFILE));
 
-        router.get(API_GET_ALL_CREDENTIAL_PROFILES).handler(ctx -> apiHandler.handleRequest(ctx, ACTION_GET_ALL_CREDENTIALS));
+        router.get(API_GET_ALL_CREDENTIAL_PROFILES)
+                .handler(ctx -> apiHandler.handleRequest(ctx, ACTION_GET_ALL_CREDENTIALS));
 
-        router.post(API_CREATE_CREDENTIAL_PROFILE).handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_CREATE_CREDENTIAL_PROFILE));
+        router.post(API_CREATE_CREDENTIAL_PROFILE)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_CREATE_CREDENTIAL_PROFILE));
 
-        router.put(API_UPDATE_CREDENTIAL_PROFILE).handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_UPDATE_CREDENTIAL_PROFILE));
+        router.put(API_UPDATE_CREDENTIAL_PROFILE)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_UPDATE_CREDENTIAL_PROFILE));
 
-        router.delete(API_DELETE_CREDENTIAL_PROFILE).handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_DELETE_CREDENTIAL_PROFILE));
-
+        router.delete(API_DELETE_CREDENTIAL_PROFILE)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_DELETE_CREDENTIAL_PROFILE));
     }
 
-
-
     /**
-     * Registers routes for discovery profile operations.
+     * Discovery profile routes.
      */
     private void registerDiscoveryProfileRoutes(Router router, ApiRequestHandler apiHandler) {
 
-        router.get(API_GET_DISCOVERY_PROFILE).handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_GET_DISCOVERY_PROFILE));
+        router.get(API_GET_DISCOVERY_PROFILE)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_GET_DISCOVERY_PROFILE));
 
-        router.get(API_GET_ALL_DISCOVERY_PROFILES).handler(ctx -> apiHandler.handleRequest(ctx, ACTION_GET_ALL_DISCOVERYPROFILES));
+        router.get(API_GET_ALL_DISCOVERY_PROFILES)
+                .handler(ctx -> apiHandler.handleRequest(ctx, ACTION_GET_ALL_DISCOVERYPROFILES));
 
-        router.get(API_GET_DISCOVERY_RUN).handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_GET_DISCOVERY_RUN));
+        router.get(API_GET_DISCOVERY_RUN)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_GET_DISCOVERY_RUN));
 
-        router.post(API_CREATE_DISCOVERY_PROFILE).handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_CREATE_DISCOVERY_PROFILE));
+        router.post(API_CREATE_DISCOVERY_PROFILE)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_CREATE_DISCOVERY_PROFILE));
 
-        router.put(API_UPDATE_DISCOVERY_PROFILE).handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_UPDATE_DISCOVERY_PROFILE));
+        router.put(API_UPDATE_DISCOVERY_PROFILE)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_UPDATE_DISCOVERY_PROFILE));
 
-        router.delete(API_DELETE_DISCOVERY_PROFILE).handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_DELETE_DISCOVERY_PROFILE));
-
+        router.delete(API_DELETE_DISCOVERY_PROFILE)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, "DISCOVERY", ACTION_DELETE_DISCOVERY_PROFILE));
     }
 
     /**
-     * Registers routes for provisioning operations.
+     * Provisioning routes.
      */
     private void registerProvisioningRoutes(Router router, ApiRequestHandler apiHandler) {
 
-        router.get(API_START_PROVISION).handler(ctx -> apiHandler.handleApiRequest(ctx, PROVISION, ACTION_START_PROVISION));
+        router.get(API_START_PROVISION)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, PROVISION, ACTION_START_PROVISION));
 
-        router.get(API_GET_PROVISIONED_DATA).handler(ctx -> apiHandler.handleApiRequest(ctx, PROVISION, ACTION_FETCH_PROVISIONED_DATA));
+        router.get(API_GET_PROVISIONED_DATA)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, PROVISION, ACTION_FETCH_PROVISIONED_DATA));
 
-        router.delete(API_DELETE_MONITOR).handler(ctx -> apiHandler.handleApiRequest(ctx, MONITOR, ACTION_DELETE_MONITOR));
-
+        router.delete(API_DELETE_MONITOR)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, MONITOR, ACTION_DELETE_MONITOR));
     }
 
     /**
-     * Registers routes for system monitoring operations.
+     * System monitoring routes.
      */
     private void registerSystemMonitorRoutes(Router router, ApiRequestHandler apiHandler) {
 
-        router.get(API_GET_MEMORY_CHECKS).handler(ctx -> apiHandler.handleApiRequest(ctx, MONITOR, ACTION_GET_MEMORY_CHECKS));
+        router.get(API_GET_MEMORY_CHECKS)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, MONITOR, ACTION_GET_MEMORY_CHECKS));
 
-        router.get(API_GET_CPU_SPIKES).handler(ctx -> apiHandler.handleApiRequest(ctx, MONITOR, ACTION_GET_CPU_SPIKES));
+        router.get(API_GET_CPU_SPIKES)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, MONITOR, ACTION_GET_CPU_SPIKES));
 
-        router.get(API_GET_TOP_CPU_SPIKES).handler(ctx -> apiHandler.handleApiRequest(ctx, MONITOR, ACTION_GET_TOP_CPU_SPIKES));
-
+        router.get(API_GET_TOP_CPU_SPIKES)
+                .handler(ctx -> apiHandler.handleApiRequest(ctx, MONITOR, ACTION_GET_TOP_CPU_SPIKES));
     }
 
     /**
-     * Starts the HTTP server and binds it to the configured port.
-     *
-     * @param router       the configured Router instance
+     * Determines port: on Render it must come from PORT env var, else fallback.
+     */
+    private int getHttpPort() {
+        String portEnv = System.getenv("PORT");
+        if (portEnv != null) {
+            try {
+                return Integer.parseInt(portEnv);
+            } catch (NumberFormatException e) {
+                LOGGER.warn("Invalid PORT env var: " + portEnv + ", defaulting to " + DEFAULT_PORT);
+            }
+        }
+        return DEFAULT_PORT;
+    }
+
+    /**
+     * Starts    HTTP server on the correct port and logs details.
      */
     private Future<Void> startServer(Router router) {
 
-        Promise<Void>startPromise = Promise.promise();
+        Promise<Void> startPromise = Promise.promise();
+
+        int port = getHttpPort();
+
+        LOGGER.info("[RestApiServer] Starting HTTP server on port: " + port);
 
         vertx.createHttpServer()
-
                 .requestHandler(router)
-
-                .listen(DEFAULT_PORT)
-
+                .listen(port)
                 .onSuccess(server -> {
-
-                    LOGGER.info("HTTP Server running on port " + DEFAULT_PORT);
-
+                    LOGGER.info("[RestApiServer] HTTP Server running on port " + server.actualPort());
                     startPromise.complete();
-
                 })
                 .onFailure(error -> {
-
-                    LOGGER.error("Failed to start HTTP Server: " + error.getMessage(), error);
-
+                    LOGGER.error("[RestApiServer] Failed to start HTTP Server", error);
                     startPromise.fail(error);
-
                 });
 
         return startPromise.future();
-
     }
-
 }

@@ -193,62 +193,51 @@ public class NmsServerApplication {
      * @return A future that completes with true if the Go plugin starts successfully, otherwise fails.
      */
     private static Future<Boolean> startGoPlugin() {
-
         Promise<Boolean> promise = Promise.promise();
 
+        // Try to kill any existing Linux process named "pluginengine"
         try {
-
-             var killProcessBuilder = new ProcessBuilder("pkill", "-f", "pluginengine");
-
-             killProcessBuilder.start().waitFor();
-
+            ProcessBuilder killProcessBuilder = new ProcessBuilder("pkill", "-f", "pluginengine");
+            killProcessBuilder.start().waitFor();
         } catch (Exception e) {
-
-            promise.fail(e);
-
-            return promise.future();
-
+            System.err.println("No existing Go process found or failed to kill: " + e.getMessage());
         }
 
-        var projectDir = System.getProperty("user.dir");
+        // Path to Go plugin in Docker container (Linux binary, no .exe)
+        String projectDir = System.getProperty("user.dir");
+        File goPlugin = new File(projectDir + "/go_executable/pluginengine");
 
-        var goPlugin = new File(projectDir + "/go_executable/pluginengine");
-
-        if (!goPlugin.exists() || !goPlugin.canExecute()) {
-
-            promise.fail("Go plugin file not found or not accessible: " + goPlugin.getAbsolutePath());
-
+        if (!goPlugin.exists()) {
+            promise.fail("Go plugin file not found: " + goPlugin.getAbsolutePath());
             return promise.future();
+        }
 
+        if (!goPlugin.canExecute()) {
+            promise.fail("Go plugin exists but is not executable: " + goPlugin.getAbsolutePath());
+            return promise.future();
         }
 
         try {
+            ProcessBuilder processBuilder = new ProcessBuilder(goPlugin.getAbsolutePath());
+            Process goProcess = processBuilder.start();
 
-            var processBuilder = new ProcessBuilder(goPlugin.getAbsolutePath());
-
-            var goProcess = processBuilder.start();
-
+            // Clean up on JVM shutdown
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-
                 if (goProcess.isAlive()) {
-
                     goProcess.destroy();
-
                 }
-
             }));
 
+            System.out.println("Go plugin started successfully (Linux mode).");
             promise.complete(true);
 
         } catch (Exception e) {
-
-            promise.fail(e);
-
+            promise.fail("Failed to start Go plugin: " + e.getMessage());
         }
 
         return promise.future();
-
     }
+
 
 
 }
