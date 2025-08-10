@@ -26,9 +26,7 @@ RUN chmod +x go_executable/pluginengine && strip go_executable/pluginengine 2>/d
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-
-# Use Render's dynamic port
-EXPOSE $PORT
-ENV PORT=8080
+# Expose web + ZMQ ports
+EXPOSE 8080 5555 5556
 
 ENTRYPOINT ["/app/start.sh"]
