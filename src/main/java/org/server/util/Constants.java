@@ -415,7 +415,7 @@ public class Constants {
     /**
      * The constant TIMETOPOLL.
      */
-    public static final Long TIMETOPOLL=300L;
+    public static final Long TIMETOPOLL=5000L;
 
     /**
      * The constant SYSTEM_DATA_INSERT.
@@ -513,13 +513,13 @@ public class Constants {
     /**
      * The constant ZMQ_HEALTH_CHECK_TIMEOUT.
      */
-    public static final int ZMQ_HEALTH_CHECK_TIMEOUT = 1500;
+    public static final int ZMQ_HEALTH_CHECK_TIMEOUT = 5000;
 
 
     /**
      * The constant SET_SEND_FIRST_MESSAGE_TIMEOUT.
      */
-    public static final int SET_SEND_FIRST_MESSAGE_TIMEOUT = 5000;
+    public static final int SET_SEND_FIRST_MESSAGE_TIMEOUT = 500;
 
     /**
      * The constant ZMQ_CONNECT_ADDRESS.

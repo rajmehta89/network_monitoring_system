@@ -63,7 +63,7 @@ public class RequestSender extends AbstractVerticle {
 
             if (zmqSocket.send(msg, ZMQ.DONTWAIT)) {
 
-               logger.info(String.format("Request sent: %s", msg));
+                logger.info(String.format("Request sent: %s", msg));
 
                 startPromise.complete();
 
