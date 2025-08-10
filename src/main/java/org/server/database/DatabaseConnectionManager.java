@@ -4,6 +4,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.PoolOptions;
@@ -26,7 +27,7 @@ public class DatabaseConnectionManager {
      */
     public DatabaseConnectionManager(Vertx vertx) {
 
-        var connectOptions = new PgConnectOptions().setHost(DATABASEHOSTNAME).setPort(DATABASE_PORT).setDatabase(DATABASENAME).setUser(DATABASEUSERNAME).setPassword(DATABASEPASSWORD).setReconnectAttempts(RECONNECTATTEMPT).setReconnectInterval(RECONNECTINTERVALTIME);
+        var connectOptions = new PgConnectOptions().setHost(DATABASEHOSTNAME).setPort(DATABASE_PORT).setDatabase(DATABASENAME).setUser(DATABASEUSERNAME).setPassword(DATABASEPASSWORD).setReconnectAttempts(RECONNECTATTEMPT).setReconnectInterval(RECONNECTINTERVALTIME).setSsl(true).setTrustOptions(new PemTrustOptions().addCertPath("/app/certs/isrgrootx1.pem"));
 
         var poolOptions = new PoolOptions().setMaxSize(POOL_SIZE).setMaxWaitQueueSize(MAX_WAIT_QUEUE_SIZE).setIdleTimeout(POOLED_IDLE_TIME);
 
