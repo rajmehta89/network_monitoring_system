@@ -1,6 +1,5 @@
 package org.server;
 
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -15,229 +14,255 @@ import org.server.messaging.RequestReceiver;
 import org.server.messaging.RequestSender;
 import org.server.scheduledJobs.PollingScheduler;
 import org.server.util.UserProfileCacheManager;
+
 import java.io.File;
+
 import static org.server.util.Constants.*;
 
-/**
- * The type Nms server application.
- */
 public class NmsServerApplication {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NmsServerApplication.class);
 
-    /**
-     * The entry point of application.
-     *
-     * @param args the input arguments
-     */
     public static void main(String[] args) {
 
+        LOGGER.info("▶ NMS Server Application starting...");
 
         var vertx = Vertx.vertx();
 
+        LOGGER.info("✔ Vert.x instance created.");
+
         var databaseConnectionManager = new DatabaseConnectionManager(vertx);
+
+        LOGGER.info("✔ DatabaseConnectionManager initialized.");
 
         var userProfileCacheManager = UserProfileCacheManager.getInstance();
 
+        LOGGER.info("✔ UserProfileCacheManager retrieved.");
+
         startGoPlugin().onSuccess(plugin -> {
 
-            LOGGER.info("Go Plugin started successfully!");
+            LOGGER.info("✔ Go Plugin started successfully!");
 
             fetchCredentialProfiles(databaseConnectionManager, userProfileCacheManager).onSuccess(v -> {
 
-                        LOGGER.info("Credential profiles loaded into cache.");
+                LOGGER.info("✔ Credential profiles loaded into cache.");
 
-                        fetchMonitoringData(databaseConnectionManager, userProfileCacheManager).onSuccess(v2 -> {
+                fetchMonitoringData(databaseConnectionManager, userProfileCacheManager).onSuccess(v2 -> {
 
-                                    LOGGER.info("Monitoring data loaded into cache.");
+                    LOGGER.info("✔ Monitoring data loaded into cache.");
 
-                                    vertx.deployVerticle(new RestApiServer()).onSuccess(httpRes -> {
+                    vertx.deployVerticle(new RestApiServer()).onSuccess(httpRes -> {
 
-                                                LOGGER.info("HttpServerVerticle deployed successfully!");
+                        LOGGER.info("✔ RestApiServer deployed successfully!");
 
-                                                vertx.deployVerticle(new DatabaseRepository(databaseConnectionManager)).onSuccess(databaseRes -> {
+                        vertx.deployVerticle(new DatabaseRepository(databaseConnectionManager)).onSuccess(databaseRes -> {
 
-                                                            LOGGER.info("DatabaseVerticle deployed successfully!");
+                            LOGGER.info("✔ DatabaseRepository Verticle deployed successfully!");
 
-                                                            vertx.deployVerticle(new RequestSender()).onSuccess(req -> {
+                            vertx.deployVerticle(new RequestSender()).onSuccess(req -> {
 
-                                                                    LOGGER.info("RequestReceiver deployed successfully!");
+                                LOGGER.info("✔ RequestSender deployed successfully!");
 
-                                                                        Promise<Boolean> promise = Promise.promise();
+                                Promise<Boolean> promise = Promise.promise();
 
-                                                                        var requestReceiver = new RequestReceiver(vertx);
+                                var requestReceiver = new RequestReceiver(vertx);
 
-                                                                        requestReceiver.start(promise);
+                                LOGGER.info("▶ Starting RequestReceiver...");
 
-                                                                        promise.future().onSuccess(zmqRes -> {
+                                requestReceiver.start(promise);
 
-                                                                            LOGGER.info("ZmqVerticle deployed successfully!");
+                                promise.future().onSuccess(zmqRes -> {
 
-                                                                            vertx.deployVerticle(new PollingScheduler(databaseConnectionManager)).onSuccess(pollingRes -> {
+                                    LOGGER.info("✔ RequestReceiver (ZMQ) started successfully!");
 
-                                                                                LOGGER.info("PollingVerticle deployed successfully!");
+                                    vertx.deployVerticle(new PollingScheduler(databaseConnectionManager)).onSuccess(pollingRes -> {
 
-                                                                                LOGGER.info("All verticles deployed successfully!");
+                                        LOGGER.info("✔ PollingScheduler deployed successfully!");
 
-                                                                            }).onFailure(err -> {LOGGER.error("Failed to deploy PollingVerticle: " + err.getMessage());vertx.close();});
+                                        LOGGER.info("🎯 NMS Server Application started successfully! All verticles deployed.");
 
-                                                                        })
-                                                                        .onFailure(err ->{ LOGGER.error("Failed to deploy ZmqVerticle: " + err.getMessage()); vertx.close();});
+                                    }).onFailure(err -> {
+                                        LOGGER.error("❌ Failed to deploy PollingScheduler", err);
+                                        vertx.close();
+                                    });
 
-                                                            }).onFailure(err ->{LOGGER.error("Failed to deploy ZmqVerticle: " + err.getMessage()); vertx.close();});
+                                }).onFailure(err -> {
+                                    LOGGER.error("❌ Failed to start RequestReceiver (ZMQ)", err);
+                                    vertx.close();
+                                });
 
-                                                        })
-                                                        .onFailure(err -> {LOGGER.error("Failed to deploy DatabaseVerticle: " + err.getMessage()); vertx.close();});
-                                            })
-                                            .onFailure(err ->{ LOGGER.error("Failed to deploy HttpServerVerticle: " + err.getMessage()); vertx.close();});
-                                })
-                                .onFailure(err -> {LOGGER.error("Failed to load monitoring data: " + err.getMessage()); vertx.close();});
-                    })
-                    .onFailure(err -> {LOGGER.error("Failed to load credential profiles: " + err.getMessage()); vertx.close();});
+                            }).onFailure(err -> {
+                                LOGGER.error("❌ Failed to deploy RequestSender", err);
+                                vertx.close();
+                            });
 
-        }).onFailure(err ->{ LOGGER.error("Failed to start Go Plugin: " + err.getMessage()); vertx.close();});
+                        }).onFailure(err -> {
+                            LOGGER.error("❌ Failed to deploy DatabaseRepository", err);
+                            vertx.close();
+                        });
 
+                    }).onFailure(err -> {
+                        LOGGER.error("❌ Failed to deploy RestApiServer", err);
+                        vertx.close();
+                    });
 
+                }).onFailure(err -> {
+                    LOGGER.error("❌ Failed to load monitoring data", err);
+                    vertx.close();
+                });
+
+            }).onFailure(err -> {
+                LOGGER.error("❌ Failed to load credential profiles", err);
+                vertx.close();
+            });
+
+        }).onFailure(err -> {
+            LOGGER.error("❌ Failed to start Go Plugin", err);
+            vertx.close();
+        });
     }
 
-
-    /**
-     * Fetches credential profiles from the database and updates the user profile cache.
-     *
-     * @param databaseConnectionManager The database connection manager.
-     * @param userProfileCacheManager   The user profile cache manager.
-     * @return A future that completes when credential profiles are fetched and updated.
-     */
-    private static Future<Void> fetchCredentialProfiles(DatabaseConnectionManager databaseConnectionManager, UserProfileCacheManager userProfileCacheManager) {
+    private static Future<Void> fetchCredentialProfiles(DatabaseConnectionManager databaseConnectionManager,
+                                                        UserProfileCacheManager userProfileCacheManager) {
 
         Promise<Void> promise = Promise.promise();
 
-        var query = "SELECT id, credentialconfig FROM credentialprofiles";
+        LOGGER.info("▶ Fetching credential profiles from database...");
+
+        String query = "SELECT id, credentialconfig FROM credentialprofiles";
 
         databaseConnectionManager.getPool().query(query).execute().onSuccess(rows -> {
 
-                    if (rows != null && rows.size() != 0) {
+            if (rows != null && rows.size() != 0) {
+                for (Row row : rows) {
+                    userProfileCacheManager.updateCredentialData(
+                            row.getInteger(ID), row.getJsonObject(CREDENTIAL_CONFIG)
+                    );
+                }
+            }
 
-                        for (Row row : rows) {
+            LOGGER.info("✔ Credential profiles fetched successfully. Count: " + (rows != null ? rows.size() : 0));
 
-                            userProfileCacheManager.updateCredentialData(row.getInteger(ID), row.getJsonObject(CREDENTIAL_CONFIG));
+            promise.complete();
 
-                        }
+        }).onFailure(err -> {
 
-                    }
+            LOGGER.error("❌ Failed to fetch credential profiles", err);
 
-                    LOGGER.info("Fetched credential profile successfully from the database.");
-
-                    promise.complete();
-
-                })
-                .onFailure(err -> {
-
-                    LOGGER.error("Failed to fetch credential profiles: " + err.getMessage(), err);
-
-                    promise.fail(err);
-
-                });
+            promise.fail(err);
+        });
 
         return promise.future();
-
     }
 
-    /**
-     * Fetches monitoring data from the database and updates the user profile cache.
-     *
-     * @param databaseConnectionManager The database connection manager.
-     * @param userProfileCacheManager   The user profile cache manager.
-     * @return A future that completes when monitoring data is fetched and updated.
-     */
-    private static Future<Void> fetchMonitoringData(DatabaseConnectionManager databaseConnectionManager, UserProfileCacheManager userProfileCacheManager) {
+    private static Future<Void> fetchMonitoringData(DatabaseConnectionManager databaseConnectionManager,
+                                                    UserProfileCacheManager userProfileCacheManager) {
 
         Promise<Void> promise = Promise.promise();
 
-        var query = "SELECT monitor_id, credential_id, ip , port FROM provision";
+        LOGGER.info("▶ Fetching monitoring data from database...");
+
+        String query = "SELECT monitor_id, credential_id, ip , port FROM provision";
 
         databaseConnectionManager.getPool().query(query).execute().onSuccess(rows -> {
 
-                    if (rows != null && rows.size() != 0) {
+            if (rows != null && rows.size() != 0) {
+                for (Row row : rows) {
+                    userProfileCacheManager.updateMonitoringData(
+                            row.getInteger(MONITOR_ID),
+                            new JsonObject()
+                                    .put(IP, row.getString(IP))
+                                    .put(PORT, row.getInteger(PORT))
+                                    .put(CREDENTIAL_PROFILE_ID, row.getInteger("credential_id"))
+                    );
+                }
+            }
 
-                        for (Row row : rows) {
+            LOGGER.info("✔ Monitoring data fetched successfully. Count: " + (rows != null ? rows.size() : 0));
 
-                            userProfileCacheManager.updateMonitoringData(row.getInteger(MONITOR_ID), new JsonObject().put(IP, row.getString(IP)).put(PORT, row.getInteger(PORT)).put(CREDENTIAL_PROFILE_ID, row.getInteger("credential_id")));
+            promise.complete();
 
-                        }
+        }).onFailure(err -> {
 
-                    }
+            LOGGER.error("❌ Failed to fetch monitoring data", err);
 
-                    LOGGER.info("Fetched monitoring data successfully from the database.");
-
-                    promise.complete();
-
-                })
-                .onFailure(err -> {
-
-                    LOGGER.error("Failed to fetch monitoring data: " + err.getMessage(), err);
-
-                    promise.fail(err);
-
-                });
+            promise.fail(err);
+        });
 
         return promise.future();
-
     }
 
-
-    /**
-     * Runs the Go plugin and ensures it starts successfully.
-     * Kills any existing Go process before starting a new one.
-     *
-     * @return A future that completes with true if the Go plugin starts successfully, otherwise fails.
-     */
     private static Future<Boolean> startGoPlugin() {
         Promise<Boolean> promise = Promise.promise();
+        LOGGER.info("▶ Attempting to start Go Plugin...");
 
-        // Try to kill any existing Linux process named "pluginengine"
-        try {
-            ProcessBuilder killProcessBuilder = new ProcessBuilder("pkill", "-f", "pluginengine");
-            killProcessBuilder.start().waitFor();
-        } catch (Exception e) {
-            System.err.println("No existing Go process found or failed to kill: " + e.getMessage());
-        }
-
-        // Path to Go plugin in Docker container (Linux binary, no .exe)
         String projectDir = System.getProperty("user.dir");
         File goPlugin = new File(projectDir + "/go_executable/pluginengine");
 
         if (!goPlugin.exists()) {
+            LOGGER.error("❌ Go plugin file not found: " + goPlugin.getAbsolutePath());
             promise.fail("Go plugin file not found: " + goPlugin.getAbsolutePath());
             return promise.future();
         }
-
         if (!goPlugin.canExecute()) {
-            promise.fail("Go plugin exists but is not executable: " + goPlugin.getAbsolutePath());
+            LOGGER.error("❌ Go plugin is not executable. Please check Dockerfile chmod.");
+            promise.fail("Go plugin is not executable: " + goPlugin.getAbsolutePath());
             return promise.future();
         }
 
+        // Try to kill stale processes, but if this fails it's not fatal
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder(goPlugin.getAbsolutePath());
-            Process goProcess = processBuilder.start();
+            new ProcessBuilder("pkill", "-f", "pluginengine").start().waitFor();
+        } catch (Exception e) {
+            LOGGER.warn("No old Go process to kill or failed to kill: " + e.getMessage());
+        }
 
-            // Clean up on JVM shutdown
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                if (goProcess.isAlive()) {
-                    goProcess.destroy();
+        try {
+            ProcessBuilder builder = new ProcessBuilder(goPlugin.getAbsolutePath());
+            builder.redirectErrorStream(true);
+
+            Process goProcess = builder.start();
+
+            // Optionally: wait a short time and check if it exits immediately
+            boolean exited = goProcess.waitFor(2, java.util.concurrent.TimeUnit.SECONDS);
+            int exitCode = -999;
+
+            if (exited) {
+                exitCode = goProcess.exitValue();
+                LOGGER.error("❌ Go plugin exited immediately with exit code " + exitCode);
+                // Optionally read and report the output
+                String output = new String(goProcess.getInputStream().readAllBytes());
+                LOGGER.error("Output: " + output);
+                promise.fail("Go plugin process exited too quickly with code " + exitCode + ". Output: " + output);
+                return promise.future();
+            }
+
+            // Start a background thread to read output (optional)
+            new Thread(() -> {
+                try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(goProcess.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        LOGGER.info("[GoPlugin] " + line);
+                    }
+                } catch (Exception ex) {
+                    LOGGER.error("Error reading plugin output", ex);
                 }
+            }).start();
+
+            // Shutdown hook as before
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                LOGGER.info("Shutting down Go plugin process...");
+                if (goProcess.isAlive()) goProcess.destroy();
             }));
 
-            System.out.println("Go plugin started successfully (Linux mode).");
+            LOGGER.info("✔ Go plugin process launched and alive.");
             promise.complete(true);
 
         } catch (Exception e) {
-            promise.fail("Failed to start Go plugin: " + e.getMessage());
+            LOGGER.error("Failed to launch Go plugin process: ", e);
+            promise.fail("Failed to launch Go plugin: " + e.getMessage());
         }
-
         return promise.future();
     }
-
-
 
 }
