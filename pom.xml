@@ -13,8 +13,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <vertx.version>4.5.8</vertx.version>
-        <vertx.verticle>io.vertx.example.MainVerticle</vertx.verticle>
         <vertx-maven-plugin.version>2.0.1</vertx-maven-plugin.version>
+        <mainClass>org.server.NmsServerApplication</mainClass>
     </properties>
 
     <repositories>
@@ -37,7 +37,7 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Vert.x Core + Web -->
+        <!-- Vert.x Core and Web -->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
@@ -49,7 +49,7 @@
             <version>${vertx.version}</version>
         </dependency>
 
-        <!-- Extra libraries -->
+        <!-- Extra Libraries -->
         <dependency>
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
@@ -95,13 +95,15 @@
             <artifactId>annotations</artifactId>
             <version>24.0.0</version>
         </dependency>
+
+        <!-- Logback Classic for Logging -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.4.14</version>
         </dependency>
 
-        <!-- Test Dependencies -->
+        <!-- Testing Dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -129,8 +131,18 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
-            <!-- Vert.x Maven Plugin -->
+            <!-- Vert.x Maven Plugin is disabled because your app does not deploy a verticle via launcher -->
+            <!--
             <plugin>
                 <groupId>io.reactiverse</groupId>
                 <artifactId>vertx-maven-plugin</artifactId>
@@ -148,6 +160,7 @@
                     <verticle>${vertx.verticle}</verticle>
                 </configuration>
             </plugin>
+            -->
 
             <!-- Compiler Plugin -->
             <plugin>
@@ -174,13 +187,14 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.vertx.core.Launcher</mainClass>
+                                    <mainClass>org.server.NmsServerApplication</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 

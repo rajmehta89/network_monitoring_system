@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
+<configuration scan="true">
 
-    <!-- Define log directory -->
-    <property name="LOG_DIR" value="/home/raj/Videos/NMSServer/src/main/java/org/server/logs" />
+    <!-- Log directory inside container (optional, can mount a volume) -->
+    <property name="LOG_DIR" value="/app/logs" />
 
-    <!-- Main Logs -->
+    <!-- Console Appender for docker logs -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <immediateFlush>true</immediateFlush>
+        </encoder>
+    </appender>
+
+    <!-- Rolling file appender (optional) -->
     <appender name="APP_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/app.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -12,19 +20,23 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %logger{50} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
+    <!-- Reduce noise from some libs -->
     <logger name="org.postgresql" level="ERROR"/>
-    <logger name="io.vertx" level="ERROR"/>
-    <logger name="io.netty" level="ERROR"/>
+    <logger name="io.vertx" level="INFO"/>
+    <logger name="io.netty" level="WARN"/>
 
+    <!-- Your app logs -->
     <logger name="org.nmsserver" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
         <appender-ref ref="APP_LOG"/>
     </logger>
 
     <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
         <appender-ref ref="APP_LOG"/>
     </root>
 
