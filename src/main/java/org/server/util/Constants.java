@@ -513,13 +513,13 @@ public class Constants {
     /**
      * The constant ZMQ_HEALTH_CHECK_TIMEOUT.
      */
-    public static final int ZMQ_HEALTH_CHECK_TIMEOUT = 10000;
+    public static final int ZMQ_HEALTH_CHECK_TIMEOUT = 1500;
 
 
     /**
      * The constant SET_SEND_FIRST_MESSAGE_TIMEOUT.
      */
-    public static final int SET_SEND_FIRST_MESSAGE_TIMEOUT = 500;
+    public static final int SET_SEND_FIRST_MESSAGE_TIMEOUT = 5000;
 
     /**
      * The constant ZMQ_CONNECT_ADDRESS.
