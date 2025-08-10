@@ -508,7 +508,7 @@ public class Constants {
     /**
      * The constant ZMQ_BIND_ADDRESS.
      */
-    public static final String ZMQ_BIND_ADDRESS = "tcp://127.0.0.1:5555";
+    public static final String ZMQ_BIND_ADDRESS   = "tcp://0.0.0.0:5555";
 
     /**
      * The constant ZMQ_HEALTH_CHECK_TIMEOUT.

@@ -25,8 +25,8 @@ var (
 )
 
 const (
-	inBoundAddress          = "tcp://127.0.0.1:5555" // Connect to Java ZMQ server
-	outBoundAddress         = "tcp://127.0.0.1:5556" // If needed, otherwise remove
+	inBoundAddress          = "tcp://0.0.0.0:5555" // Server bind address
+	outBoundAddress         = "tcp://0.0.0.0:5556" // If needed, otherwise remove
 	workerCount             = 5
 	RequestTypeDiscovery    = "discovery"
 	RequestTypeProvisioning = "provisioning"
