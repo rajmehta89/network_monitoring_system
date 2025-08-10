@@ -200,7 +200,7 @@ public class RestApiServer extends AbstractVerticle {
 
         vertx.createHttpServer()
                 .requestHandler(router)
-                .listen(port)
+                .listen(port, "0.0.0.0") // <-- This is the critical change
                 .onSuccess(server -> {
                     LOGGER.info("[RestApiServer] HTTP Server running on port " + server.actualPort());
                     startPromise.complete();
