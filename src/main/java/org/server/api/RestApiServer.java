@@ -97,6 +97,8 @@ public class RestApiServer extends AbstractVerticle {
         registerSystemMonitorRoutes(router, apiHandler);
     }
 
+
+
     /**
      * Credential profile routes.
      */
@@ -107,6 +109,13 @@ public class RestApiServer extends AbstractVerticle {
 
         router.get(API_GET_ALL_CREDENTIAL_PROFILES)
                 .handler(ctx -> apiHandler.handleRequest(ctx, ACTION_GET_ALL_CREDENTIALS));
+
+        router.get("/").handler(ctx -> {
+            ctx.response()
+                    .setStatusCode(200)
+                    .putHeader("content-type", "text/plain")
+                    .end("OK Health Is Ok Now");
+        });
 
         router.post(API_CREATE_CREDENTIAL_PROFILE)
                 .handler(ctx -> apiHandler.handleApiRequest(ctx, CREDENTIAL, ACTION_CREATE_CREDENTIAL_PROFILE));
