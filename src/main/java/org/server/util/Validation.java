@@ -226,50 +226,82 @@ public class Validation {
      * @param port the port
      * @return the boolean
      */
+
     public static boolean checkAvailability(String ip, int port) {
         try {
-            // Run ping command
-            var command = "ping -c 3 " + ip + " | awk '/packets transmitted/ {if ($(NF-4)== \"100%\") print \"false\"; else print \"true\"}'";
 
-            var processBuilder = new ProcessBuilder("sh", "-c", command);
+            String os = System.getProperty("os.name").toLowerCase();
 
-            processBuilder.redirectErrorStream(true);
+            // 1. Ping command & parsing
+            boolean pingSuccess = false;
+            Process pingProcess;
+            if (os.contains("win")) {
+                String pingCmd = "ping -n 3 " + ip;
+                pingProcess = new ProcessBuilder("cmd.exe", "/c", pingCmd)
+                        .redirectErrorStream(true)
+                        .start();
 
-            Process process = processBuilder.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(pingProcess.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("Lost = 0 (0% loss)")) {
+                        pingSuccess = true;
+                        break;
+                    }
+                }
+                pingProcess.waitFor();
+            } else {
+                // Linux/macOS with awk to check packet loss
+                String pingCmd = "ping -c 3 " + ip + " | awk '/packets transmitted/ {if ($(NF-4)== \"100%\") print \"false\"; else print \"true\"}'";
+                pingProcess = new ProcessBuilder("sh", "-c", pingCmd)
+                        .redirectErrorStream(true)
+                        .start();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(pingProcess.getInputStream()));
+                String output = reader.readLine();
+                pingProcess.waitFor();
 
-            String output = reader.readLine();
-
-            int exitCode = process.waitFor();
-
-            if (exitCode != 0 || output == null || !output.trim().equals("true")) {
-
-                 return false;
-
+                pingSuccess = "true".equals(output != null ? output.trim() : "");
             }
 
-            try (Socket socket = new Socket()) {
+            if (!pingSuccess) return false;
 
-                socket.connect(new InetSocketAddress(ip, port), 3000);
+            // 2. Port check using OS command (no Java socket)
+            boolean portOpen = false;
+            Process portProcess;
 
-                return true;
+            if (os.contains("win")) {
+                // PowerShell TCP port test
+                String portCmd = String.format(
+                        "powershell -Command \"$tcp = New-Object System.Net.Sockets.TcpClient; " +
+                                "try { $tcp.Connect('%s', %d); if ($tcp.Connected) { exit 0 } else { exit 1 } } " +
+                                "catch { exit 1 }\"", ip, port);
 
-            } catch (Exception e) {
+                portProcess = Runtime.getRuntime().exec(portCmd);
+            } else {
+                // Linux/macOS bash test with /dev/tcp
+                String portCmd = String.format(
+                        "timeout 3 bash -c '</dev/tcp/%s/%d'",
+                        ip, port);
 
+                portProcess = Runtime.getRuntime().exec(new String[]{"bash", "-c", portCmd});
+            }
+
+            int exitCode = portProcess.waitFor();
+            portOpen = (exitCode == 0);
+
+            if (!portOpen) {
                 System.err.println("Port " + port + " is not reachable on IP: " + ip);
-
-                return false;
             }
+
+            return portOpen;
 
         } catch (Exception e) {
-
             System.err.println("Error checking device availability: " + e.getMessage());
-
             return false;
-
         }
     }
+
 
 
 
